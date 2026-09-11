@@ -1,39 +1,28 @@
 // src/services/autoSaveService.js
-
-// URL simulada si usas json-server o fallback a localStorage/memoria basado en db.json
-const DB_KEY = 'user_autosave_data';
+const API_URL = 'http://localhost:3001/profile';
 
 export const saveFormData = async (data) => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      // Simulación de fallo aleatorio del 10% para probar el estado de 'error'
-      const shouldFail = Math.random() < 0.1;
-
-      if (shouldFail) {
-        reject(new Error("Error al conectar con la base de datos (db.json)"));
-      } else {
-        // Persiste la estructura del db.json
-        const updatedDb = { profile: data };
-        localStorage.setItem(DB_KEY, JSON.stringify(updatedDb));
-        resolve({ status: 200, message: "Petición HTTP simulada exitosa", data: updatedDb });
-      }
-    }, 1200);
+  const response = await fetch(API_URL, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
   });
+
+  if (!response.ok) {
+    throw new Error('Error al actualizar db.json');
+  }
+
+  return await response.json();
 };
 
-export const getInitialFormData = () => {
-  const savedDb = localStorage.getItem(DB_KEY);
-  if (savedDb) {
-    try {
-      const parsed = JSON.parse(savedDb);
-      return parsed.profile;
-    } catch {
-      // Si falla la lectura, retorna el estado base del db.json
+export const getInitialFormData = async () => {
+  try {
+    const response = await fetch(API_URL);
+    if (response.ok) {
+      return await response.json();
     }
+  } catch (error) {
+    console.error('Error al cargar db.json:', error);
   }
-  return {
-    nombre: "Alex Cubero",
-    email: "alex.cubero@ejemplo.com",
-    notas: "Desarrollador Front-End trabajando en laboratorio de automatización React."
-  };
+  return { nombre: '', email: '', notas: '' };
 };
