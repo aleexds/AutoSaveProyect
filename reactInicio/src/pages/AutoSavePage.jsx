@@ -1,16 +1,14 @@
+// src/pages/AutoSavePage.jsx
 import { useState, useEffect } from 'react';
 import { StatusBadge } from '../components/StatusBadge';
 import { FormField } from '../components/FormField';
-import { saveFormData } from '../services/autoSaveService';
+import { saveFormData, getInitialFormData } from '../services/autoSaveService';
 
 export const AutoSavePage = () => {
-  // Estado del formulario
-  const [formData, setFormData] = useState(() => {
-    const saved = localStorage.getItem('user_autosave_data');
-    return saved ? JSON.parse(saved) : { nombre: '', email: '', notas: '' };
-  });
+  // 1. Inicializa leyendo la estructura definida en db.json
+  const [formData, setFormData] = useState(() => getInitialFormData());
 
-  // Estados del flujo automatizado: 'inactivo' | 'en ejecucion' | 'exito' | 'error'
+  // 2. Estados de la automatización: 'inactivo' | 'en ejecucion' | 'exito' | 'error'
   const [status, setStatus] = useState('inactivo');
   const [errorMessage, setErrorMessage] = useState('');
   const [isDirty, setIsDirty] = useState(false);
@@ -19,11 +17,12 @@ export const AutoSavePage = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    setIsDirty(true);
+    setIsDirty(true); // Se marca que hubo interacción y cambios locales
   };
 
-  // EFECTO AUTOMATIZADO CON DEBOUNCE Y LIMPIEZA
+  // 3. EFECTO AUTOMATIZADO CON DEBOUNCE Y LIMPIEZA DE EFECTOS
   useEffect(() => {
+    // Si no hay cambios locales hechos por el usuario, no ejecuta la automatización
     if (!isDirty) return;
 
     // Disparador temporizado de 2 segundos (Debounce)
@@ -32,11 +31,12 @@ export const AutoSavePage = () => {
       setErrorMessage('');
 
       try {
+        // Petición asíncrona enviando los nuevos datos
         await saveFormData(formData);
         setStatus('exito');
-        setIsDirty(false);
+        setIsDirty(false); // Reinicia la bandera tras guardar con éxito
 
-        // Retorna a 'inactivo' tras 3 segundos
+        // Retorna visualmente al estado 'inactivo' tras 3 segundos
         const resetTimer = setTimeout(() => {
           setStatus('inactivo');
         }, 3000);
@@ -48,7 +48,7 @@ export const AutoSavePage = () => {
       }
     }, 2000);
 
-    // Limpieza técnica para evitar fugas de memoria y peticiones duplicadas
+    // Limpieza técnica para evitar fugas de memoria (Memory Leaks) al reescribir rápido
     return () => clearTimeout(timerId);
   }, [formData, isDirty]);
 
@@ -56,7 +56,7 @@ export const AutoSavePage = () => {
     <div className="container">
       <header>
         <h1>Laboratorio de Automatización en React</h1>
-        <p className="subtitle">Módulo de Guardado Automático con Debounce</p>
+        <p className="subtitle">Módulo de Guardado Automático con Debounce y db.json</p>
         <StatusBadge status={status} errorMessage={errorMessage} />
       </header>
 
