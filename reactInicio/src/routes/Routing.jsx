@@ -1,7 +1,8 @@
+
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AutoSavePage } from '../pages/AutoSavePage';
 
-export const AppRouter = () => {
+export const Routing = () => {
   return (
     <BrowserRouter>
       <Routes>
